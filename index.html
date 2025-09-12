@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ruleta Mediempresa</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f5f5f5;
+    }
+
+    .container {
+      margin-top: 40px;
+    }
+
+    .pointer {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 40px solid red;
+      margin: 0 auto;
+      position: relative;
+      top: 20px;
+      z-index: 20;
+    }
+
+    .wheel {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      border: 10px solid #0a9cae;
+      margin: 20px auto;
+      overflow: hidden;
+      transform: rotate(0deg);
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    }
+
+    canvas {
+      border-radius: 50%;
+    }
+
+    .logo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120px;
+      height: 120px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .logo img {
+      max-width: 100px;
+      max-height: 100px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #0a9cae;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="pointer"></div>
+    <div class="wheel" id="wheel">
+      <canvas id="canvas" width="400" height="400"></canvas>
+      <div class="logo">
+        <img src="Logo.png" alt="Mediempresa">
+      </div>
+    </div>
+    <button onclick="spinWheel()">Girar Ruleta</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const options = [
+      { text: "Descuento 3%", color: "#1abc9c", probability: 0.30 },
+      { text: "Descuento 5%", color: "#3498db", probability: 0.30 },
+      { text: "Descuento 10%", color: "#9b59b6", probability: 0.02 },
+      { text: "Souvenir 🎁", color: "#f39c12", probability: 0.08 },
+      { text: "Mejor suerte", color: "#e74c3c", probability: 0.30 }
+    ];
+
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+    let resultDiv = document.getElementById("result");
+    let wheel = document.getElementById("wheel");
+    let currentRotation = 0;
+
+    // Cada sector será igual (360/5 = 72° = 1.256 rad)
+    const sliceAngle = (2 * Math.PI) / options.length;
+
+    // Dibujar ruleta con sectores iguales
+    function drawWheel() {
+      options.forEach((opt, i) => {
+        let startAngle = i * sliceAngle;
+        let endAngle = startAngle + sliceAngle;
+
+        // Sector
+        ctx.beginPath();
+        ctx.moveTo(200, 200);
+        ctx.arc(200, 200, 190, startAngle, endAngle);
+        ctx.fillStyle = opt.color;
+        ctx.fill();
+        ctx.stroke();
+
+        // Texto
+        ctx.save();
+        ctx.translate(200, 200);
+        ctx.rotate(startAngle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "16px Arial";
+        ctx.fillText(opt.text, 180, 10);
+        ctx.restore();
+
+        // Guardamos ángulo central para luego girar hacia ahí
+        opt.startAngle = startAngle;
+        opt.endAngle = endAngle;
+        opt.centerAngle = startAngle + sliceAngle / 2;
+      });
+    }
+
+    drawWheel();
+
+    // Selección ponderada
+    function weightedRandom() {
+      let r = Math.random();
+      let sum = 0;
+      for (let opt of options) {
+        sum += opt.probability;
+        if (r <= sum) return opt;
+      }
+    }
+
+    function spinWheel() {
+      let chosen = weightedRandom();
+
+      // Usar ángulo del sector elegido
+      let targetAngle = chosen.centerAngle;
+      // Corregimos para que el puntero (arriba, 90° = 0.5π) coincida
+      let correction = 1.5 * Math.PI - targetAngle;
+
+      let randomSpin = 2 * Math.PI * 5; // 5 vueltas completas
+      currentRotation += randomSpin + correction;
+
+      wheel.style.transform = `rotate(${currentRotation}rad)`;
+
+      setTimeout(() => {
+        resultDiv.innerHTML = "🎉 " + chosen.text + " 🎉";
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
