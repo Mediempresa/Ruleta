@@ -73,6 +73,11 @@
       margin-top: 20px;
     }
 
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+
     #result {
       margin-top: 20px;
       font-size: 18px;
@@ -90,7 +95,7 @@
         <img src="Logo.png" alt="Mediempresa">
       </div>
     </div>
-    <button onclick="spinWheel()">Girar Ruleta</button>
+    <button id="spinBtn" onclick="spinWheel()">Girar Ruleta</button>
     <div id="result"></div>
   </div>
 
@@ -107,12 +112,12 @@
     let ctx = canvas.getContext("2d");
     let resultDiv = document.getElementById("result");
     let wheel = document.getElementById("wheel");
+    let spinBtn = document.getElementById("spinBtn");
     let currentRotation = 0;
+    let hasSpun = false; // 🔑 control de un solo giro
 
-    // Cada sector será igual (360/5 = 72° = 1.256 rad)
     const sliceAngle = (2 * Math.PI) / options.length;
 
-    // Dibujar ruleta con sectores iguales
     function drawWheel() {
       options.forEach((opt, i) => {
         let startAngle = i * sliceAngle;
@@ -136,7 +141,7 @@
         ctx.fillText(opt.text, 180, 10);
         ctx.restore();
 
-        // Guardamos ángulo central para luego girar hacia ahí
+        // Guardamos ángulo central
         opt.startAngle = startAngle;
         opt.endAngle = endAngle;
         opt.centerAngle = startAngle + sliceAngle / 2;
@@ -145,7 +150,6 @@
 
     drawWheel();
 
-    // Selección ponderada
     function weightedRandom() {
       let r = Math.random();
       let sum = 0;
@@ -156,17 +160,23 @@
     }
 
     function spinWheel() {
+      if (hasSpun) return; // evita múltiples giros
+      hasSpun = true;
+
       let chosen = weightedRandom();
 
-      // Usar ángulo del sector elegido
+      // Ángulo objetivo
       let targetAngle = chosen.centerAngle;
-      // Corregimos para que el puntero (arriba, 90° = 0.5π) coincida
       let correction = 1.5 * Math.PI - targetAngle;
 
-      let randomSpin = 2 * Math.PI * 5; // 5 vueltas completas
+      let randomSpin = 2 * Math.PI * 5; // 5 vueltas
       currentRotation += randomSpin + correction;
 
       wheel.style.transform = `rotate(${currentRotation}rad)`;
+
+      // Deshabilitar botón
+      spinBtn.disabled = true;
+      spinBtn.innerText = "Ya jugaste 🎉";
 
       setTimeout(() => {
         resultDiv.innerHTML = "🎉 " + chosen.text + " 🎉";
